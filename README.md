@@ -43,28 +43,48 @@ Designed to be simple, gets out of your way, and easy to extend if you need more
 
 ---
 
+## Browser UI
+
+When the server is running, open `http://localhost:8080` in your browser to access the built-in management UI. No extra tools needed.
+
+The UI lets you:
+- Paste or write mock JSON in a textarea with **Format** and **Sample** buttons
+- Upload mocks and copy the returned `mockId`
+- Browse all registered mocks with their routes, status codes, delays, and full endpoint URLs
+- Copy any endpoint URL to the clipboard
+- Delete mocks with one click
+
+> **Tip:** You can also use any HTTP client (cURL, Postman, Bruno) to call the same REST API described below.
+
+---
+
 ## Project Structure
 
 ```
-src/main/java/com/mock/server/
+src/main/java/com/elli/mockserver/
 ├── MockServerApplication.java          # @SpringBootApplication
 ├── controller/
-│   ├── MockManagementController.java   # POST /mock/upload, GET /mocks, DELETE /mock/{id}
-│   └── MockRequestDispatcher.java      # Handles all dynamic requests (catch‑all)
+│   └── MockManagementController.java   # POST /mock/upload, GET /mocks, DELETE /mock/{id}
 ├── service/
 │   ├── MockRegistryService.java        # Registry of mock configurations
 │   ├── DynamicRouteRegistrar.java      # Adds/removes routes at runtime
 │   └── PersistenceService.java         # Saves/loads mocks to disk
 ├── model/
 │   ├── MockConfiguration.java          # Root object: id, routes, created
-│   ├── RouteDefinition.java            # path, method, responseBody, delay, status
-│   └── MockRequest.java                # For logging/dispatch
+│   └── RouteDefinition.java            # path, method, responseBody, delay, status
 ├── handler/
-│   └── MockRequestHandler.java         # Actual logic to serve a mocked endpoint
-├── config/
-│   └── WebConfig.java                  # CORS, async config if needed
-└── util/
-    └── PathVariableExtractor.java      # Parses :id from path
+│   └── MockRequestHandler.java         # Serves a mocked endpoint
+├── dto/
+│   ├── RouteConfigDto.java, MockUploadResponse.java, RouteResponseDto.java
+│   ├── MockSummaryDto.java, ErrorResponse.java
+├── exception/
+│   ├── GlobalExceptionHandler.java     # Catches & formats all errors as JSON
+│   └── MockNotFoundException.java, MockUploadException.java,
+│       RouteNotFoundException.java, PersistenceException.java,
+│       RouteRegistrationException.java
+└── resources/static/
+    ├── index.html                      # Browser UI
+    └── style.css                       # UI styles
 ```
 
 ---
@@ -106,22 +126,12 @@ Saves mock configurations as JSON files to disk (`mock-store/`). On startup, rel
 ## Getting Started
 
 ### Prerequisites
-- Java 17+
-- Maven or Gradle
-- Spring Boot 3.x
-
-### Dependencies
-- Spring Web
-- Spring Boot DevTools (optional)
-- Jackson (included with Spring Boot)
+- Java 26+
+- Maven (wrapped via `mvnw`)
 
 ### Build & Run
 ```bash
 ./mvnw spring-boot:run
-```
-or
-```bash
-./gradlew bootRun
 ```
 
 The server starts on `http://localhost:8080`.
@@ -132,6 +142,7 @@ The server starts on `http://localhost:8080`.
 
 | Method | Endpoint             | Description                  |
 |--------|----------------------|------------------------------|
+| GET    | `/`                  | Browser UI (index.html)      |
 | POST   | `/mock/upload`       | Upload a new mock definition |
 | GET    | `/mocks`             | List all registered mocks    |
 | DELETE | `/mock/{mockId}`     | Delete a mock and its routes |

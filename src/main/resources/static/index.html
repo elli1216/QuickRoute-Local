@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Server</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>InstantMock &mdash; Local</h1>
+            <p class="subtitle">Define and serve mock API endpoints at runtime.</p>
+        </header>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="icon icon-upload">&#8593;</div>
+                <h2>Upload Mock</h2>
+            </div>
+            <div id="uploadAlert" class="alert" role="alert"></div>
+            <textarea id="jsonInput"></textarea>
+            <div class="toolbar">
+                <button type="button" class="btn btn-secondary" onclick="formatJson()">Format</button>
+                <button type="button" class="btn btn-secondary" onclick="fillSample()">Sample</button>
+                <button id="uploadBtn" class="btn btn-primary" onclick="upload()">Upload</button>
+            </div>
+            <div id="uploadResult" class="upload-result">
+                <span class="mock-id-label">mockId</span>
+                <span class="mock-id-value" id="resultMockId"></span>
+                <button class="copy-btn" onclick="copyMockId()">Copy</button>
+                <span class="copy-msg" id="copyMsg">Copied!</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="icon icon-list">&#9776;</div>
+                <h2>Mocks</h2>
+            </div>
+            <div id="mocksList"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE = '';
+
+        const SAMPLE = {
+            "GET /users": {
+                "status": 200,
+                "body": [
+                    { "id": 1, "name": "Alice" },
+                    { "id": 2, "name": "Bob" }
+                ]
+            },
+            "GET /users/:id": {
+                "status": 200,
+                "body": { "id": ":id", "name": "User :id" }
+            },
+            "POST /users": {
+                "status": 201,
+                "body": { "id": 99, "name": "Created" },
+                "delay": 500
+            }
+        };
+
+        function fillSample() {
+            document.getElementById('jsonInput').value = JSON.stringify(SAMPLE, null, 2);
+        }
+
+        fillSample();
+
+        async function upload() {
+            const btn = document.getElementById('uploadBtn');
+            const alert = document.getElementById('uploadAlert');
+            const result = document.getElementById('uploadResult');
+            btn.disabled = true;
+            alert.className = 'alert';
+            result.classList.remove('visible');
+
+            let body;
+            try {
+                body = JSON.parse(document.getElementById('jsonInput').value);
+            } catch (e) {
+                showAlert('Invalid JSON: ' + e.message, 'alert-error');
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                const res = await fetch(BASE + '/mock/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showAlert(data.error || 'Upload failed', 'alert-error');
+                    btn.disabled = false;
+                    return;
+                }
+                document.getElementById('resultMockId').textContent = data.mockId;
+                result.classList.add('visible');
+                document.getElementById('copyMsg').classList.remove('visible');
+                showAlert('Mock created successfully', 'alert-success');
+                loadMocks();
+            } catch (e) {
+                showAlert('Network error: ' + e.message, 'alert-error');
+            }
+            btn.disabled = false;
+        }
+
+        async function loadMocks() {
+            const container = document.getElementById('mocksList');
+            try {
+                const res = await fetch(BASE + '/mocks');
+                const data = await res.json();
+                if (!res.ok) {
+                    container.innerHTML = '<div class="empty">Failed to load mocks</div>';
+                    return;
+                }
+                renderMocks(container, data);
+            } catch (e) {
+                container.innerHTML = '<div class="empty">Network error loading mocks</div>';
+            }
+        }
+
+        function renderMocks(container, data) {
+            const ids = Object.keys(data);
+            if (ids.length === 0) {
+                container.innerHTML = '<div class="empty">No mocks yet. Upload one above.</div>';
+                return;
+            }
+            let html = '';
+            for (const id of ids) {
+                const mock = data[id];
+                html += '<div class="mock-item">';
+                html += '<div class="mock-item-header">';
+                html += '<div><span class="mock-item-id">' + escapeHtml(id) + '</span>';
+                html += '<span class="mock-item-meta">' + mock.routeCount + ' route' + (mock.routeCount !== 1 ? 's' : '');
+                if (mock.createdAt) html += ' &middot; ' + mock.createdAt;
+                html += '</span></div>';
+                html += '<button class="btn btn-danger btn-sm" onclick="deleteMock(\'' + id + '\')">Delete</button>';
+                html += '</div>';
+
+                if (mock.routes && mock.routes.length > 0) {
+                    html += '<table><thead><tr><th>Method</th><th>Path</th><th>Status</th><th>Delay</th><th>URL</th></tr></thead><tbody>';
+                    const baseUrl = window.location.origin + '/mock/' + id;
+                    for (const r of mock.routes) {
+                        const fullUrl = baseUrl + r.pathPattern;
+                        html += '<tr>';
+                        html += '<td><span class="method-badge method-' + r.method + '">' + escapeHtml(r.method) + '</span></td>';
+                        html += '<td>' + escapeHtml(r.pathPattern) + '</td>';
+                        html += '<td class="status-cell">' + r.statusCode + '</td>';
+                        html += '<td class="delay-cell">' + (r.delayMs > 0 ? r.delayMs + 'ms' : '&ndash;') + '</td>';
+                        html += '<td><div class="url-cell"><code>' + escapeHtml(fullUrl) + '</code><button class="copy-btn" onclick="copyText(\'' + escapeHtml(fullUrl) + '\')">Copy</button></div></td>';
+                        html += '</tr>';
+                    }
+                    html += '</tbody></table>';
+                }
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        async function deleteMock(id) {
+            if (!confirm('Delete mock ' + id + '?')) return;
+            try {
+                const res = await fetch(BASE + '/mock/' + id, { method: 'DELETE' });
+                if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.error || 'Delete failed');
+                    return;
+                }
+                loadMocks();
+            } catch (e) {
+                alert('Network error: ' + e.message);
+            }
+        }
+
+        function formatJson() {
+            const el = document.getElementById('jsonInput');
+            try {
+                el.value = JSON.stringify(JSON.parse(el.value), null, 2);
+                document.getElementById('uploadAlert').className = 'alert';
+            } catch (e) {
+                showAlert('Invalid JSON: ' + e.message, 'alert-error');
+            }
+        }
+
+        function showAlert(msg, type) {
+            const el = document.getElementById('uploadAlert');
+            el.textContent = msg;
+            el.className = 'alert ' + type;
+        }
+
+        function copyMockId() {
+            const text = document.getElementById('resultMockId').textContent;
+            copyText(text);
+            document.getElementById('copyMsg').classList.add('visible');
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).catch(() => { });
+        }
+
+        function escapeHtml(s) {
+            if (typeof s !== 'string') return String(s);
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        loadMocks();
+    </script>
+</body>
+
+</html>
