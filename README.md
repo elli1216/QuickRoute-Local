@@ -1,4 +1,4 @@
-# Lightweight API Mocking Server
+# InstantMock-Local - Lightweight API Mocking Server
 
 Develop and test against realistic API responses **before your real backend exists** — no coding, no restarts, no external dependencies.
 
