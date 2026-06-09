@@ -1,50 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mock Server</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <body>
-    <div class="container">
-        <header>
-            <h1>InstantMock &mdash; Local</h1>
-            <p class="subtitle">Define and serve mock API endpoints at runtime.</p>
-        </header>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="icon icon-upload">&#8593;</div>
-                <h2>Upload Mock</h2>
-            </div>
-            <div id="uploadAlert" class="alert" role="alert"></div>
-            <textarea id="jsonInput"></textarea>
-            <div class="toolbar">
-                <button type="button" class="btn btn-secondary" onclick="formatJson()">Format</button>
-                <button type="button" class="btn btn-secondary" onclick="fillSample()">Sample</button>
-                <button id="uploadBtn" class="btn btn-primary" onclick="upload()">Upload</button>
-            </div>
-            <div id="uploadResult" class="upload-result">
-                <span class="mock-id-label">mockId</span>
-                <span class="mock-id-value" id="resultMockId"></span>
-                <button class="copy-btn" onclick="copyMockId()">Copy</button>
-                <span class="copy-msg" id="copyMsg">Copied!</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="icon icon-list">&#9776;</div>
-                <h2>Mocks</h2>
-            </div>
-            <div id="mocksList"></div>
-        </div>
-    </div>
-
-    <script>
+    <script th:fragment="scripts">
         const BASE = '';
 
         const SAMPLE = {
@@ -71,6 +29,21 @@
         }
 
         fillSample();
+
+        function showAlert(msg, type) {
+            const el = document.getElementById('uploadAlert');
+            el.textContent = msg;
+            el.className = 'alert ' + type;
+        }
+
+        function escapeHtml(s) {
+            if (typeof s !== 'string') return String(s);
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).catch(() => { });
+        }
 
         async function upload() {
             const btn = document.getElementById('uploadBtn');
@@ -182,6 +155,7 @@
 
         function formatJson() {
             const el = document.getElementById('jsonInput');
+
             try {
                 el.value = JSON.stringify(JSON.parse(el.value), null, 2);
                 document.getElementById('uploadAlert').className = 'alert';
@@ -190,25 +164,10 @@
             }
         }
 
-        function showAlert(msg, type) {
-            const el = document.getElementById('uploadAlert');
-            el.textContent = msg;
-            el.className = 'alert ' + type;
-        }
-
         function copyMockId() {
             const text = document.getElementById('resultMockId').textContent;
             copyText(text);
             document.getElementById('copyMsg').classList.add('visible');
-        }
-
-        function copyText(text) {
-            navigator.clipboard.writeText(text).catch(() => { });
-        }
-
-        function escapeHtml(s) {
-            if (typeof s !== 'string') return String(s);
-            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
         loadMocks();

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div th:fragment="uploadCard" class="card">
+        <div class="card-header">
+            <div class="icon icon-upload">&#8593;</div>
+            <h2>Upload Mock</h2>
+        </div>
+        <div id="uploadAlert" class="alert" role="alert"></div>
+        <textarea id="jsonInput"></textarea>
+        <div class="toolbar">
+            <button type="button" class="btn btn-secondary" onclick="formatJson()">Format</button>
+            <!-- <button type="button" class="btn btn-secondary" onclick="fillSample()">Sample</button> -->
+            <button id="uploadBtn" class="btn btn-primary" onclick="upload()">Upload</button>
+        </div>
+        <div id="uploadResult" class="upload-result">
+            <span class="mock-id-label">mockId</span>
+            <span class="mock-id-value" id="resultMockId"></span>
+            <button class="copy-btn" onclick="copyMockId()">Copy</button>
+            <span class="copy-msg" id="copyMsg">Copied!</span>
+        </div>
+    </div>
+</body>
+
+</html>
