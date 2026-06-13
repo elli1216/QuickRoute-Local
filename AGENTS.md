@@ -1,4 +1,4 @@
-## Repo: `InstantMock-Local` — Lightweight API Mocking Server
+## Repo: `QuickRoute-Local` — Lightweight API Mocking Server
 
 ### Project state
 - All core components implemented: `model/`, `handler/`, `service/`, `controller/` packages exist.

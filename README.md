@@ -1,4 +1,4 @@
-# InstantMock-Local - Lightweight API Mocking Server
+# QuickRoute-Local - Lightweight API Mocking Server
 
 Develop and test against realistic API responses **before your real backend exists** — no coding, no restarts, no external dependencies.
 
@@ -19,25 +19,25 @@ Designed to be simple, gets out of your way, and easy to extend if you need more
 
 ```
 ┌─────────────────┐     ┌─────────────────────────────────────────────────┐
-│   Client        │     │              Mock Server (Spring Boot)           │
-│ (Postman/UI)    │────▶│                                                 │
-└─────────────────┘     │  ┌─────────────┐    ┌────────────────────────┐ │
-                        │  │ Upload API  │───▶│ Mock Configuration      │ │
+│   Client        │     │              Mock Server (Spring Boot)          │
+│ (Postman/UI)    │────>│                                                 │
+└─────────────────┘     │  ┌─────────────┐    ┌─────────────────────────┐ │
+                        │  │ Upload API  │───>│ Mock Configuration      │ │
                         │  │ /mock/upload│    │ (JSON → RouteDefinition)│ │
-                        │  └─────────────┘    └───────────┬────────────┘ │
-                        │                                 │              │
-                        │                                 ▼              │
-                        │  ┌─────────────┐    ┌────────────────────────┐ │
-                        │  │ Dynamic     │◀───│ In‑memory Registry      │ │
-                        │  │ Route       │    │ (MockId → Routes)       │ │
-                        │  │ Registrar   │────│ + Persistence (file)    │ │
-                        │  └─────────────┘    └───────────┬────────────┘ │
-                        │                                 │              │
-                        │                                 ▼              │
-                        │  ┌──────────────────────────────────────────┐  │
-                        │  │   Request Handling Dispatcher            │  │
-                        │  │   (Forward to registered mock handler)   │  │
-                        │  └──────────────────────────────────────────┘  │
+                        │  └─────────────┘    └───────────┬─────────────┘ │
+                        │                                 │               │
+                        │                                 ▼               │
+                        │  ┌─────────────┐    ┌────────────────────────┐  │
+                        │  │ Dynamic     │<───│ In‑memory Registry     │  │
+                        │  │ Route       │    │ (MockId → Routes)      │  │
+                        │  │ Registrar   │────│ + Persistence (file)   │  │
+                        │  └─────────────┘    └───────────┬────────────┘  │
+                        │                                 │               │
+                        │                                 ▼               │
+                        │  ┌──────────────────────────────────────────┐   │
+                        │  │   Request Handling Dispatcher            │   │
+                        │  │   (Forward to registered mock handler)   │   │
+                        │  └──────────────────────────────────────────┘   │
                         └─────────────────────────────────────────────────┘
 ```
 
